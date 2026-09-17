@@ -3,116 +3,143 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3-D Roter Würfel</title>
+  <title>Echter 3-D Würfel</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
+    html, body {
       margin: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #222;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
-      font-family: Arial, sans-serif;
+      background: #111;
     }
 
-    .scene {
-      width: 220px;
-      height: 220px;
-      perspective: 700px;
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
       touch-action: none;
     }
-
-    .cube {
-      width: 200px;
-      height: 200px;
-      position: relative;
-      transform-style: preserve-3d;
-      transform: rotateX(-20deg) rotateY(30deg);
-    }
-
-    .face {
-      position: absolute;
-      width: 200px;
-      height: 200px;
-      background: #e00000;
-      border: 3px solid #900000;
-      opacity: 0.98;
-    }
-
-    .front  { transform: translateZ(100px); }
-    .back   { transform: rotateY(180deg) translateZ(100px); }
-    .right  { transform: rotateY(90deg) translateZ(100px); }
-    .left   { transform: rotateY(-90deg) translateZ(100px); }
-    .top    { transform: rotateX(90deg) translateZ(100px); }
-    .bottom { transform: rotateX(-90deg) translateZ(100px); }
   </style>
 </head>
 
 <body>
 
-  <div class="scene" id="scene">
-    <div class="cube" id="cube">
-      <div class="face front"></div>
-      <div class="face back"></div>
-      <div class="face right"></div>
-      <div class="face left"></div>
-      <div class="face top"></div>
-      <div class="face bottom"></div>
-    </div>
-  </div>
+<script type="module">
+  import * as THREE from
+    "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js";
 
-  <script>
-    const scene = document.getElementById("scene");
-    const cube = document.getElementById("cube");
+  import { OrbitControls } from
+    "https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/controls/OrbitControls.js";
 
-    let rotationX = -20;
-    let rotationY = 30;
+  // Szene
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x111111);
 
-    let dragging = false;
-    let lastX = 0;
-    let lastY = 0;
+  // Kamera
+  const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  );
 
-    function updateCube() {
-      cube.style.transform =
-        `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
-    }
+  camera.position.set(3, 2.5, 4);
 
-    scene.addEventListener("pointerdown", (event) => {
-      dragging = true;
-      lastX = event.clientX;
-      lastY = event.clientY;
-      scene.setPointerCapture(event.pointerId);
-    });
+  // Renderer = echtes WebGL
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
 
-    scene.addEventListener("pointermove", (event) => {
-      if (!dragging) return;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-      const dx = event.clientX - lastX;
-      const dy = event.clientY - lastY;
+  document.body.appendChild(renderer.domElement);
 
-      rotationY += dx * 0.7;
-      rotationX -= dy * 0.7;
+  // Licht
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.2);
+  scene.add(ambientLight);
 
-      updateCube();
+  const mainLight = new THREE.DirectionalLight(0xffffff, 3);
+  mainLight.position.set(3, 5, 4);
+  scene.add(mainLight);
 
-      lastX = event.clientX;
-      lastY = event.clientY;
-    });
+  // Echter 3-D Würfel
+  const geometry = new THREE.BoxGeometry(2, 2, 2);
 
-    scene.addEventListener("pointerup", () => {
-      dragging = false;
-    });
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xff0000,
+    roughness: 0.35,
+    metalness: 0.05
+  });
 
-    scene.addEventListener("pointercancel", () => {
-      dragging = false;
-    });
-  </script>
+  const cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
+
+  // Boden
+  const floorGeometry = new THREE.PlaneGeometry(20, 20);
+
+  const floorMaterial = new THREE.MeshStandardMaterial({
+    color: 0x222222,
+    roughness: 0.8
+  });
+
+  const floor = new THREE.Mesh(
+    floorGeometry,
+    floorMaterial
+  );
+
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -1.15;
+
+  scene.add(floor);
+
+  // Schatten
+  renderer.shadowMap.enabled = true;
+
+  mainLight.castShadow = true;
+  cube.castShadow = true;
+  floor.receiveShadow = true;
+
+  // Maus + Touch-Steuerung
+  const controls = new OrbitControls(
+    camera,
+    renderer.domElement
+  );
+
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+
+  controls.enablePan = false;
+
+  // Zoom erlauben
+  controls.minDistance = 2.5;
+  controls.maxDistance = 8;
+
+  // Animation
+  function animate() {
+    requestAnimationFrame(animate);
+
+    controls.update();
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // Bildschirmgröße anpassen
+  window.addEventListener("resize", () => {
+    camera.aspect =
+      window.innerWidth / window.innerHeight;
+
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(
+      window.innerWidth,
+      window.innerHeight
+    );
+  });
+</script>
 
 </body>
 </html>

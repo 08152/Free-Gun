@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3-D Roter Würfel</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #222;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    .scene {
+      width: 220px;
+      height: 220px;
+      perspective: 700px;
+      touch-action: none;
+    }
+
+    .cube {
+      width: 200px;
+      height: 200px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(-20deg) rotateY(30deg);
+    }
+
+    .face {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background: #e00000;
+      border: 3px solid #900000;
+      opacity: 0.98;
+    }
+
+    .front  { transform: translateZ(100px); }
+    .back   { transform: rotateY(180deg) translateZ(100px); }
+    .right  { transform: rotateY(90deg) translateZ(100px); }
+    .left   { transform: rotateY(-90deg) translateZ(100px); }
+    .top    { transform: rotateX(90deg) translateZ(100px); }
+    .bottom { transform: rotateX(-90deg) translateZ(100px); }
+  </style>
+</head>
+
+<body>
+
+  <div class="scene" id="scene">
+    <div class="cube" id="cube">
+      <div class="face front"></div>
+      <div class="face back"></div>
+      <div class="face right"></div>
+      <div class="face left"></div>
+      <div class="face top"></div>
+      <div class="face bottom"></div>
+    </div>
+  </div>
+
+  <script>
+    const scene = document.getElementById("scene");
+    const cube = document.getElementById("cube");
+
+    let rotationX = -20;
+    let rotationY = 30;
+
+    let dragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function updateCube() {
+      cube.style.transform =
+        `rotateX(${rotationX}deg) rotateY(${rotationY}deg)`;
+    }
+
+    scene.addEventListener("pointerdown", (event) => {
+      dragging = true;
+      lastX = event.clientX;
+      lastY = event.clientY;
+      scene.setPointerCapture(event.pointerId);
+    });
+
+    scene.addEventListener("pointermove", (event) => {
+      if (!dragging) return;
+
+      const dx = event.clientX - lastX;
+      const dy = event.clientY - lastY;
+
+      rotationY += dx * 0.7;
+      rotationX -= dy * 0.7;
+
+      updateCube();
+
+      lastX = event.clientX;
+      lastY = event.clientY;
+    });
+
+    scene.addEventListener("pointerup", () => {
+      dragging = false;
+    });
+
+    scene.addEventListener("pointercancel", () => {
+      dragging = false;
+    });
+  </script>
+
+</body>
+</html>
